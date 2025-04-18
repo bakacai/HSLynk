@@ -29,6 +29,30 @@ jobs:
         run: |
           flutter config --enable-linux-desktop
           flutter build linux --release
+      
+          # 创建AppDir结构
+           mkdir -p AppDir/usr/{bin,share/{applications,icons/hicolor/256x256/apps}}
+           
+           # 复制应用程序文件
+           cp -r build/linux/x64/release/bundle/* AppDir/usr/bin/
+           
+           # 复制图标
+           cp assets/images/hslink.png AppDir/usr/share/icons/hicolor/256x256/apps/hslynk.png
+           
+           # 创建桌面文件
+           cat > AppDir/usr/share/applications/hslynk.desktop << EOF
+           [Desktop Entry]
+           Name=HSLynk
+           Comment=HS LINK PRO上位机
+           Exec=hslynk
+           Icon=hslynk
+           Type=Application
+           Categories=Development;
+           Terminal=false
+           EOF
+           
+           # 设置权限
+           chmod +x AppDir/usr/bin/hslynk
 
       # 创建DEB包
       - name: Create DEB package
