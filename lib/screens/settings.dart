@@ -10,15 +10,15 @@ import '../theme.dart';
 import '../widgets/page.dart';
 
 const List<String> accentColorNames = [
-  'System',
-  'Yellow',
-  'Orange',
-  'Red',
-  'Magenta',
-  'Purple',
-  'Blue',
-  'Teal',
-  'Green',
+  '系统',
+  '黄色',
+  '橙色',
+  '红色',
+  '洋红色',
+  '紫色',
+  '蓝色',
+  '青色',
+  '绿色',
 ];
 
 // 判断是否支持窗口特效
@@ -133,45 +133,6 @@ class _SettingsState extends State<Settings> with PageMixin {
           );
         }),
         biggerSpacer,
-        Text(
-          '导航面板显示模式',
-          style: FluentTheme.of(context).typography.subtitle,
-        ),
-        spacer,
-        ...List.generate(PaneDisplayMode.values.length, (index) {
-          final mode = PaneDisplayMode.values[index];
-          return Padding(
-            padding: const EdgeInsetsDirectional.only(bottom: 8.0),
-            child: RadioButton(
-              checked: appTheme.displayMode == mode,
-              onChanged: (value) {
-                if (value) appTheme.displayMode = mode;
-              },
-              content: Text(
-                mode.toString().replaceAll('PaneDisplayMode.', ''),
-              ),
-            ),
-          );
-        }),
-        biggerSpacer,
-        Text('导航指示器', style: FluentTheme.of(context).typography.subtitle),
-        spacer,
-        ...List.generate(NavigationIndicators.values.length, (index) {
-          final mode = NavigationIndicators.values[index];
-          return Padding(
-            padding: const EdgeInsetsDirectional.only(bottom: 8.0),
-            child: RadioButton(
-              checked: appTheme.indicator == mode,
-              onChanged: (value) {
-                if (value) appTheme.indicator = mode;
-              },
-              content: Text(
-                mode.toString().replaceAll('NavigationIndicators.', ''),
-              ),
-            ),
-          );
-        }),
-        biggerSpacer,
         Text('强调色', style: FluentTheme.of(context).typography.subtitle),
         spacer,
         Wrap(children: [
@@ -218,63 +179,6 @@ class _SettingsState extends State<Settings> with PageMixin {
             );
           }),
         ],
-        biggerSpacer,
-        Text(
-          '文本方向',
-          style: FluentTheme.of(context).typography.subtitle,
-        ),
-        spacer,
-        ...List.generate(TextDirection.values.length, (index) {
-          final direction = TextDirection.values[index];
-          return Padding(
-            padding: const EdgeInsetsDirectional.only(bottom: 8.0),
-            child: RadioButton(
-              checked: appTheme.textDirection == direction,
-              onChanged: (value) {
-                if (value) {
-                  appTheme.textDirection = direction;
-                }
-              },
-              content: Text(
-                '$direction'
-                    .replaceAll('TextDirection.', '')
-                    .replaceAll('rtl', '从右到左')
-                    .replaceAll('ltr', '从左到右'),
-              ),
-            ),
-          );
-        }).reversed,
-        biggerSpacer,
-        Text('语言区域', style: FluentTheme.of(context).typography.subtitle),
-        description(
-          content: const Text(
-            'Fluent UI 组件使用的语言区域设置,如时间选择器和日期选择器。这不会影响此应用程序的界面语言。',
-          ),
-        ),
-        spacer,
-        Wrap(
-          spacing: 15.0,
-          runSpacing: 10.0,
-          children: List.generate(
-            supportedLocales.length,
-            (index) {
-              final locale = supportedLocales[index];
-
-              return Padding(
-                padding: const EdgeInsetsDirectional.only(bottom: 8.0),
-                child: RadioButton(
-                  checked: currentLocale == locale,
-                  onChanged: (value) {
-                    if (value) {
-                      appTheme.locale = locale;
-                    }
-                  },
-                  content: Text('$locale'),
-                ),
-              );
-            },
-          ),
-        ),
       ],
     );
   }

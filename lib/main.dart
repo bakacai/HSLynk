@@ -1,5 +1,6 @@
 import 'screens/home.dart';
 import 'screens/settings.dart';
+import 'screens/about.dart';
 import 'package:fluent_ui/fluent_ui.dart' hide Page;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart' as flutter_acrylic;
@@ -10,7 +11,7 @@ import 'package:window_manager/window_manager.dart';
 
 import 'theme.dart';
 
-const String appTitle = 'flutter app';
+const String appTitle = 'HSLynk';
 
 /// Checks if the current environment is a desktop environment.
 bool get isDesktop {
@@ -217,6 +218,18 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
         }
       },
     ),
+    // 关于页面导航项
+    PaneItem(
+      key: const ValueKey('/about'),
+      icon: const Icon(FluentIcons.info),
+      title: const Text('关于'),
+      body: const SizedBox.shrink(),
+      onTap: () {
+        if (GoRouterState.of(context).uri.toString() != '/about') {
+          context.go('/about');
+        }
+      },
+    ),
   ];
 
   @override
@@ -263,11 +276,8 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = FluentLocalizations.of(context);
-
     // 获取主题相关配置
     final appTheme = context.watch<AppTheme>();
-    final theme = FluentTheme.of(context);
 
     // 处理路由状态更新
     if (widget.shellContext != null) {
@@ -282,45 +292,6 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
       // 构建应用栏
       appBar: NavigationAppBar(
         automaticallyImplyLeading: false,
-        // 构建返回按钮
-        leading: () {
-          final enabled = widget.shellContext != null && router.canPop();
-
-          final onPressed = enabled
-              ? () {
-                  if (router.canPop()) {
-                    context.pop();
-                    setState(() {});
-                  }
-                }
-              : null;
-          return NavigationPaneTheme(
-            data: NavigationPaneTheme.of(context).merge(NavigationPaneThemeData(
-              unselectedIconColor: WidgetStateProperty.resolveWith((states) {
-                if (states.isDisabled) {
-                  return ButtonThemeData.buttonColor(context, states);
-                }
-                return ButtonThemeData.uncheckedInputColor(
-                  FluentTheme.of(context),
-                  states,
-                ).basedOnLuminance();
-              }),
-            )),
-            child: Builder(
-              builder: (context) => PaneItem(
-                icon: const Center(child: Icon(FluentIcons.back, size: 12.0)),
-                title: Text(localizations.backButtonTooltip),
-                body: const SizedBox.shrink(),
-                enabled: enabled,
-              ).build(
-                context,
-                false,
-                onPressed,
-                displayMode: PaneDisplayMode.compact,
-              ),
-            ),
-          );
-        }(),
         // 构建标题
         title: () {
           if (kIsWeb) {
@@ -372,26 +343,20 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
       // 构建导航面板
       pane: NavigationPane(
         selected: _calculateSelectedIndex(context),
-        // 构建头部 Logo
-        header: SizedBox(
+        // 构建头部文本
+        header: const SizedBox(
           height: kOneLineTileHeight,
-          child: ShaderMask(
-            shaderCallback: (rect) {
-              final color = appTheme.color.defaultBrushFor(
-                theme.brightness,
-              );
-              return LinearGradient(
-                colors: [
-                  color,
-                  color,
-                ],
-              ).createShader(rect);
-            },
-            child: const FlutterLogo(
-              style: FlutterLogoStyle.horizontal,
-              size: 80.0,
-              textColor: Colors.white,
-              duration: Duration.zero,
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10.0),
+              child: Text(
+                '菜单',
+                style: TextStyle(
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ),
@@ -491,6 +456,9 @@ final router = GoRouter(navigatorKey: rootNavigatorKey, routes: [
 
       /// 设置页路由
       GoRoute(path: '/settings', builder: (context, state) => const Settings()),
+
+      /// 关于页路由
+      GoRoute(path: '/about', builder: (context, state) => const AboutPage()),
     ],
   ),
 ]);

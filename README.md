@@ -1,6 +1,6 @@
-# flutter app
+# HSLynk
 
-使用fluent_ui的flutter模板
+HS LINK 三方上位机
 
 ## Getting Started
 

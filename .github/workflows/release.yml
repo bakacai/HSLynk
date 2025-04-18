@@ -1,0 +1,249 @@
+name: Release
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  # Linux 构建任务
+  linux-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+      
+      # 安装Linux构建依赖
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libgtk-3-dev
+          sudo apt-get install -y rpm
+          sudo apt-get install -y dpkg
+          sudo apt-get install -y appstream
+
+      # 构建Linux版本
+      - name: Build Linux
+        run: |
+          flutter config --enable-linux-desktop
+          flutter build linux --release
+
+      # 创建AppImage
+      - name: Create AppImage
+        run: |
+          sudo apt-get install -y libfuse2
+          wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x appimagetool
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/applications
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+          cp -r build/linux/x64/release/bundle/* AppDir/usr/bin/
+          cp assets/images/hslink.png AppDir/usr/share/icons/hicolor/256x256/apps/hslynk.png
+          cat > AppDir/usr/share/applications/hslynk.desktop << EOF
+          [Desktop Entry]
+          Name=HSLynk
+          Exec=hslynk
+          Icon=hslynk
+          Type=Application
+          Categories=Development;
+          EOF
+          ./appimagetool AppDir HSLynk.AppImage
+
+      # 创建DEB包
+      - name: Create DEB package
+        run: |
+          mkdir -p deb/DEBIAN
+          mkdir -p deb/usr/bin
+          mkdir -p deb/usr/share/applications
+          mkdir -p deb/usr/share/icons/hicolor/256x256/apps
+          cp -r build/linux/x64/release/bundle/* deb/usr/bin/
+          cp assets/images/hslink.png deb/usr/share/icons/hicolor/256x256/apps/hslynk.png
+          cp AppDir/usr/share/applications/hslynk.desktop deb/usr/share/applications/
+          cat > deb/DEBIAN/control << EOF
+          Package: hslynk
+          Version: ${GITHUB_REF#refs/tags/v}
+          Architecture: amd64
+          Maintainer: Bakacai
+          Description: HSLynk - HS LINK PRO上位机
+          EOF
+          dpkg-deb --build deb hslynk.deb
+
+      # 创建RPM包
+      - name: Create RPM package
+        run: |
+          mkdir -p rpm/BUILD rpm/RPMS rpm/SOURCES rpm/SPECS rpm/SRPMS
+          cat > rpm/SPECS/hslynk.spec << EOF
+          Name: hslynk
+          Version: ${GITHUB_REF#refs/tags/v}
+          Release: 1
+          Summary: HSLynk - HS LINK PRO上位机
+          License: MIT
+          
+          %description
+          HSLynk是一个使用Flutter和Fluent UI构建的现代化HS-LINK PRO上位机。
+          
+          %install
+          mkdir -p %{buildroot}/usr/bin
+          mkdir -p %{buildroot}/usr/share/applications
+          mkdir -p %{buildroot}/usr/share/icons/hicolor/256x256/apps
+          cp -r %{_sourcedir}/bundle/* %{buildroot}/usr/bin/
+          cp %{_sourcedir}/hslynk.png %{buildroot}/usr/share/icons/hicolor/256x256/apps/
+          cp %{_sourcedir}/hslynk.desktop %{buildroot}/usr/share/applications/
+          
+          %files
+          /usr/bin/*
+          /usr/share/applications/hslynk.desktop
+          /usr/share/icons/hicolor/256x256/apps/hslynk.png
+          EOF
+          
+          mkdir -p rpm/SOURCES/bundle
+          cp -r build/linux/x64/release/bundle/* rpm/SOURCES/bundle/
+          cp assets/images/hslink.png rpm/SOURCES/hslynk.png
+          cp AppDir/usr/share/applications/hslynk.desktop rpm/SOURCES/
+          rpmbuild --define "_topdir $(pwd)/rpm" -bb rpm/SPECS/hslynk.spec
+          cp rpm/RPMS/x86_64/hslynk*.rpm ./hslynk.rpm
+
+      # 上传Linux构建产物
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-artifacts
+          path: |
+            HSLynk.AppImage
+            hslynk.deb
+            hslynk.rpm
+
+  # Windows 构建任务
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+
+      # 构建Windows版本
+      - name: Build Windows
+        run: |
+          flutter config --enable-windows-desktop
+          flutter build windows --release
+
+      # 创建便携版ZIP
+      - name: Create Portable ZIP
+        run: |
+          Compress-Archive -Path build/windows/x64/Release/* -DestinationPath HSLynk-portable.zip
+
+      # 创建Windows安装包
+      - name: Create Windows Installer
+        uses: joncloud/makensis-action@v4
+        with:
+          script-file: |
+            !include "MUI2.nsh"
+            Name "HSLynk"
+            OutFile "HSLynk-setup.exe"
+            InstallDir "$PROGRAMFILES64\HSLynk"
+            
+            !insertmacro MUI_PAGE_DIRECTORY
+            !insertmacro MUI_PAGE_INSTFILES
+            !insertmacro MUI_UNPAGE_CONFIRM
+            !insertmacro MUI_UNPAGE_INSTFILES
+            
+            !insertmacro MUI_LANGUAGE "SimpChinese"
+            
+            Section "HSLynk" SecMain
+              SetOutPath "$INSTDIR"
+              File /r "build\windows\x64\Release\*.*"
+              
+              CreateDirectory "$SMPROGRAMS\HSLynk"
+              CreateShortcut "$SMPROGRAMS\HSLynk\HSLynk.lnk" "$INSTDIR\hslynk.exe"
+              CreateShortcut "$DESKTOP\HSLynk.lnk" "$INSTDIR\hslynk.exe"
+              
+              WriteUninstaller "$INSTDIR\uninstall.exe"
+              
+              WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\HSLynk" \
+                         "DisplayName" "HSLynk"
+              WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\HSLynk" \
+                         "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
+            SectionEnd
+            
+            Section "Uninstall"
+              Delete "$SMPROGRAMS\HSLynk\HSLynk.lnk"
+              Delete "$DESKTOP\HSLynk.lnk"
+              RMDir "$SMPROGRAMS\HSLynk"
+              
+              RMDir /r "$INSTDIR"
+              
+              DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\HSLynk"
+            SectionEnd
+
+      # 上传Windows构建产物
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-artifacts
+          path: |
+            HSLynk-portable.zip
+            HSLynk-setup.exe
+
+  # macOS 构建任务
+  macos-build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+
+      # 构建macOS版本
+      - name: Build macOS
+        run: |
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+
+      # 创建DMG包
+      - name: Create DMG
+        run: |
+          brew install create-dmg
+          create-dmg \
+            --volname "HSLynk" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --icon "HSLynk.app" 200 190 \
+            --hide-extension "HSLynk.app" \
+            --app-drop-link 600 185 \
+            "HSLynk.dmg" \
+            "build/macos/Build/Products/Release/HSLynk.app"
+
+      # 上传macOS构建产物
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-artifacts
+          path: HSLynk.dmg
+
+  # 创建GitHub Release
+  create-release:
+    needs: [linux-build, windows-build, macos-build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            linux-artifacts/HSLynk.AppImage
+            linux-artifacts/hslynk.deb
+            linux-artifacts/hslynk.rpm
+            windows-artifacts/HSLynk-portable.zip
+            windows-artifacts/HSLynk-setup.exe
+            macos-artifacts/HSLynk.dmg
+          draft: false
+          prerelease: false
+          generate_release_notes: true 
