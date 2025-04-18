@@ -4,11 +4,14 @@
 // future. If not, the values below would default to using the project name when this becomes a
 // 'flutter create' template.
 
-// The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = hslynk
+// The application's name. By default this is also the title of the window.
+PRODUCT_NAME = HSLynk
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = cc.bakacai.hslynk.hslynk
+PRODUCT_BUNDLE_IDENTIFIER = com.example.hslynk
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2025 cc.bakacai.hslynk. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2024 Bakacai. All rights reserved.
+
+// Minimum deployment target for macOS
+MACOSX_DEPLOYMENT_TARGET = 10.14.6
