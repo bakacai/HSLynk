@@ -255,7 +255,7 @@ jobs:
           name: windows-artifacts
           path: |
             HSLynk-portable.zip
-            windows/HSLynk-setup.exe
+            HSLynk-setup.exe
 
   # 创建GitHub Release
   create-release:
