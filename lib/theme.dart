@@ -1,16 +1,21 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:system_theme/system_theme.dart';
-
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum NavigationIndicators { sticky, end }
 
 class AppTheme extends ChangeNotifier {
+  static const String _themeModeKey = 'theme_mode';
+  static const String _windowEffectKey = 'window_effect';
+  static const String _accentColorKey = 'accent_color';
+
   AccentColor? _color;
   AccentColor get color => _color ?? systemAccentColor;
   set color(AccentColor color) {
     _color = color;
+    _saveSettings();
     notifyListeners();
   }
 
@@ -18,6 +23,7 @@ class AppTheme extends ChangeNotifier {
   ThemeMode get mode => _mode;
   set mode(ThemeMode mode) {
     _mode = mode;
+    _saveSettings();
     notifyListeners();
   }
 
@@ -37,22 +43,14 @@ class AppTheme extends ChangeNotifier {
 
   WindowEffect _windowEffect = WindowEffect.disabled;
   WindowEffect get windowEffect => _windowEffect;
-  set windowEffect(WindowEffect windowEffect) {
-    _windowEffect = windowEffect;
+  set windowEffect(WindowEffect effect) {
+    _windowEffect = effect;
+    _saveSettings();
     notifyListeners();
   }
 
   void setEffect(WindowEffect effect, BuildContext context) {
-    Window.setEffect(
-      effect: effect,
-      color: [
-        WindowEffect.solid,
-        WindowEffect.acrylic,
-      ].contains(effect)
-          ? FluentTheme.of(context).micaBackgroundColor.withValues(alpha: 0.05)
-          : Colors.transparent,
-      dark: FluentTheme.of(context).brightness.isDark,
-    );
+    windowEffect = effect;
   }
 
   TextDirection _textDirection = TextDirection.ltr;
@@ -67,6 +65,46 @@ class AppTheme extends ChangeNotifier {
   set locale(Locale? locale) {
     _locale = locale;
     notifyListeners();
+  }
+
+  AppTheme() {
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final themeModeIndex = prefs.getInt(_themeModeKey) ?? 0;
+    final windowEffectIndex = prefs.getInt(_windowEffectKey) ?? 0;
+    final accentColorIndex = prefs.getInt(_accentColorKey);
+
+    _mode = ThemeMode.values[themeModeIndex];
+    _windowEffect = WindowEffect.values[windowEffectIndex];
+
+    if (accentColorIndex != null) {
+      if (accentColorIndex == 0) {
+        _color = null; // 使用系统强调色
+      } else {
+        _color = Colors.accentColors[accentColorIndex - 1];
+      }
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> _saveSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_themeModeKey, _mode.index);
+    await prefs.setInt(_windowEffectKey, _windowEffect.index);
+
+    // 保存强调色索引
+    if (_color == null) {
+      await prefs.setInt(_accentColorKey, 0); // 系统强调色
+    } else {
+      final index = Colors.accentColors.indexOf(_color!);
+      if (index != -1) {
+        await prefs.setInt(_accentColorKey, index + 1);
+      }
+    }
   }
 }
 

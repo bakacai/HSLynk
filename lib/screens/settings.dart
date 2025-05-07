@@ -98,40 +98,36 @@ class _SettingsState extends State<Settings> with PageMixin {
     final appTheme = context.watch<AppTheme>();
     const spacer = SizedBox(height: 10.0);
     const biggerSpacer = SizedBox(height: 40.0);
-
-    const supportedLocales = FluentLocalizations.supportedLocales;
-    final currentLocale =
-        appTheme.locale ?? Localizations.maybeLocaleOf(context);
     return ScaffoldPage.scrollable(
       header: const PageHeader(title: Text('设置')),
       children: [
         Text('主题模式', style: FluentTheme.of(context).typography.subtitle),
         spacer,
-        ...List.generate(ThemeMode.values.length, (index) {
-          final mode = ThemeMode.values[index];
-          return Padding(
-            padding: const EdgeInsetsDirectional.only(bottom: 8.0),
-            child: RadioButton(
-              checked: appTheme.mode == mode,
-              onChanged: (value) {
-                if (value) {
-                  appTheme.mode = mode;
-
-                  if (kIsWindowEffectsSupported) {
-                    // 某些窗口特效在暗色模式下效果更好
-                    // appTheme.setEffect(WindowEffect.disabled, context);
-                    appTheme.setEffect(appTheme.windowEffect, context);
+        ToggleSwitch(
+          content: const Text('跟随系统'),
+          checked: appTheme.mode == ThemeMode.system,
+          onChanged: (v) {
+            if (v) {
+              appTheme.mode = ThemeMode.system;
+            } else {
+              appTheme.mode = ThemeMode.light;
+            }
+          },
+        ),
+        const SizedBox(height: 8),
+        ToggleSwitch(
+          content: const Text('暗黑模式'),
+          checked: FluentTheme.of(context).brightness.isDark,
+          onChanged: appTheme.mode == ThemeMode.system
+              ? null
+              : (v) {
+                  if (v) {
+                    appTheme.mode = ThemeMode.dark;
+                  } else {
+                    appTheme.mode = ThemeMode.light;
                   }
-                }
-              },
-              content: Text('$mode'
-                  .replaceAll('ThemeMode.', '')
-                  .replaceAll('system', '系统')
-                  .replaceAll('light', '浅色')
-                  .replaceAll('dark', '深色')),
-            ),
-          );
-        }),
+                },
+        ),
         biggerSpacer,
         Text('强调色', style: FluentTheme.of(context).typography.subtitle),
         spacer,
@@ -166,10 +162,23 @@ class _SettingsState extends State<Settings> with PageMixin {
               padding: const EdgeInsetsDirectional.only(bottom: 8.0),
               child: RadioButton(
                 checked: appTheme.windowEffect == mode,
-                onChanged: (value) {
+                onChanged: (value) async {
                   if (value) {
-                    appTheme.windowEffect = mode;
-                    appTheme.setEffect(mode, context);
+                    await Window.setEffect(
+                      effect: mode,
+                      color: [
+                        WindowEffect.solid,
+                        WindowEffect.acrylic,
+                      ].contains(mode)
+                          ? FluentTheme.of(context)
+                              .micaBackgroundColor
+                              .withValues(alpha: 0.05)
+                          : Colors.transparent,
+                      dark: FluentTheme.of(context).brightness.isDark,
+                    );
+                    if (mounted) {
+                      appTheme.windowEffect = mode;
+                    }
                   }
                 },
                 content: Text(

@@ -1,6 +1,8 @@
 import 'screens/home.dart';
 import 'screens/settings.dart';
 import 'screens/about.dart';
+import 'screens/device_settings.dart';
+import 'screens/device_upgrade.dart';
 import 'package:fluent_ui/fluent_ui.dart' hide Page;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart' as flutter_acrylic;
@@ -10,6 +12,8 @@ import 'package:system_theme/system_theme.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'theme.dart';
+import 'package:hslynk/src/rust/frb_generated.dart';
+import 'src/device/device_manager.dart';
 
 const String appTitle = 'HSLynk';
 
@@ -25,6 +29,8 @@ bool get isDesktop {
 
 /// 应用程序的主入口函数
 void main() async {
+  await RustLib.init();
+
   // 确保Flutter绑定初始化完成
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -83,8 +89,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 使用ChangeNotifierProvider来提供主题数据
-    return ChangeNotifierProvider.value(
-      value: _appTheme,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: _appTheme),
+        ChangeNotifierProvider(create: (_) => DeviceManager()),
+      ],
       builder: (context, child) {
         // 监听主题变化
         final appTheme = context.watch<AppTheme>();
@@ -168,6 +177,38 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
       title: const Text('首页'),
       body: const SizedBox.shrink(),
     ),
+    // 设备设置导航项
+    PaneItem(
+      key: const ValueKey('/device_settings'),
+      icon: const Icon(FluentIcons.repair),
+      title: const Text('设备设置'),
+      body: const SizedBox.shrink(),
+      onTap: () {
+        final deviceManager = context.read<DeviceManager>();
+        final connectedDevice = deviceManager.connectedDeviceSn;
+        if (connectedDevice != null) {
+          context.go('/device_settings?sn=$connectedDevice');
+        } else {
+          context.go('/device_settings');
+        }
+      },
+    ),
+    // 设备升级导航项
+    PaneItem(
+      key: const ValueKey('/device_upgrade'),
+      icon: const Icon(FluentIcons.update_restore),
+      title: const Text('设备升级'),
+      body: const SizedBox.shrink(),
+      onTap: () {
+        final deviceManager = context.read<DeviceManager>();
+        final connectedDevice = deviceManager.connectedDeviceSn;
+        if (connectedDevice != null) {
+          context.go('/device_upgrade?sn=$connectedDevice');
+        } else {
+          context.go('/device_upgrade');
+        }
+      },
+    ),
   ].map<NavigationPaneItem>((e) {
     // 构建导航项的辅助函数
     PaneItem buildPaneItem(PaneItem item) {
@@ -249,18 +290,26 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
   // 计算当前选中的导航项索引
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
+    final path = location.split('?')[0]; // 移除查询参数部分
+
     // 在主要项目列表中查找
     int indexOriginal = originalItems
         .where((item) => item.key != null)
         .toList()
-        .indexWhere((item) => item.key == Key(location));
+        .indexWhere((item) {
+      final itemPath = (item.key as ValueKey).value.toString();
+      return itemPath == path;
+    });
 
     if (indexOriginal == -1) {
       // 在底部项目列表中查找
       int indexFooter = footerItems
           .where((element) => element.key != null)
           .toList()
-          .indexWhere((element) => element.key == Key(location));
+          .indexWhere((element) {
+        final itemPath = (element.key as ValueKey).value.toString();
+        return itemPath == path;
+      });
       if (indexFooter == -1) {
         return 0;
       }
@@ -309,20 +358,35 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
         }(),
         // 构建操作区域
         actions: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-          // 暗色模式切换开关
+          // 设备连接状态指示器
           Align(
             alignment: AlignmentDirectional.centerEnd,
             child: Padding(
               padding: const EdgeInsetsDirectional.only(end: 8.0),
-              child: ToggleSwitch(
-                content: const Text('暗黑模式'),
-                checked: FluentTheme.of(context).brightness.isDark,
-                onChanged: (v) {
-                  if (v) {
-                    appTheme.mode = ThemeMode.dark;
-                  } else {
-                    appTheme.mode = ThemeMode.light;
-                  }
+              child: Consumer<DeviceManager>(
+                builder: (context, deviceManager, child) {
+                  final connectedDevice = deviceManager.connectedDeviceSn;
+                  final isConnected = connectedDevice != null;
+                  final device = isConnected 
+                      ? deviceManager.availableDevices.firstWhere(
+                          (d) => d.sn == connectedDevice,
+                          orElse: () => Device(sn: connectedDevice))
+                      : null;
+                  
+                  return Row(
+                    children: [
+                      Icon(
+                        isConnected ? FluentIcons.plug_connected : FluentIcons.plug_disconnected,
+                        color: isConnected ? Colors.green : Colors.red,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isConnected 
+                            ? '已连接${device?.nickname != null ? " - ${device!.nickname}" : ""}'
+                            : '未连接',
+                      ),
+                    ],
+                  );
                 },
               ),
             ),
@@ -385,8 +449,8 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
         context: context,
         builder: (_) {
           return ContentDialog(
-            title: const Text('确认关闭'),
-            content: const Text('确定要关闭此窗口吗？'),
+            title: const Text('HSLynk'),
+            content: const Text('确定要退出此程序吗？'),
             actions: [
               FilledButton(
                 child: const Text('是'),
@@ -453,6 +517,30 @@ final router = GoRouter(navigatorKey: rootNavigatorKey, routes: [
     routes: <GoRoute>[
       /// 首页路由
       GoRoute(path: '/', builder: (context, state) => const HomePage()),
+
+      /// 设备设置路由
+      GoRoute(
+        path: '/device_settings',
+        builder: (context, state) {
+          final deviceSn = state.uri.queryParameters['sn'];
+          if (deviceSn == null) {
+            return const Center(child: Text('请先连接设备'));
+          }
+          return DeviceSettings(deviceSn: deviceSn);
+        },
+      ),
+
+      /// 设备升级路由
+      GoRoute(
+        path: '/device_upgrade',
+        builder: (context, state) {
+          final deviceSn = state.uri.queryParameters['sn'];
+          if (deviceSn == null) {
+            return const Center(child: Text('请先连接设备'));
+          }
+          return DeviceUpgrade(deviceSn: deviceSn);
+        },
+      ),
 
       /// 设置页路由
       GoRoute(path: '/settings', builder: (context, state) => const Settings()),

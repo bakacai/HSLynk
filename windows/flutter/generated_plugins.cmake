@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   flutter_acrylic
+  hid4flutter
   screen_retriever
   system_theme
   url_launcher_windows
@@ -11,6 +12,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  rust_lib_hslynk
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

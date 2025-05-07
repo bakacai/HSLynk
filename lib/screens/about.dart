@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -61,7 +62,7 @@ class AboutPage extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.0),
           child: Text(
-            '开源协议: MIT License',
+            '开源协议: GPLv3 License',
             style: TextStyle(fontSize: 14),
             textAlign: TextAlign.center,
           ),
@@ -165,7 +166,7 @@ class AboutPage extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: 5),
-                      Text('RCSN'),
+                      Text('sakumisu'),
                       Text(
                         'CherryDAP',
                         style: TextStyle(
@@ -187,7 +188,7 @@ class AboutPage extends StatelessWidget {
             children: [
               FilledButton(
                 onPressed: () {
-                  // 这里可以添加打开 GitHub 仓库的链接
+                  launchUrl(Uri.parse('https://github.com/bakacai/HSLynk'));
                 },
                 child: const Text('GitHub'),
               ),
