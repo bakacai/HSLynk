@@ -246,7 +246,7 @@ jobs:
       - name: Create Windows Installer
         uses: joncloud/makensis-action@v4
         with:
-          script-file: windows/installer.nsi
+          script-file: installer.nsi
 
       # 上传Windows构建产物
       - name: Upload Windows Artifacts
@@ -269,7 +269,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            linux-artifacts/HSLynk.AppImage
             linux-artifacts/hslynk.deb
             linux-artifacts/hslynk.rpm
             windows-artifacts/HSLynk-portable.zip
