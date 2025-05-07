@@ -1,6 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/material.dart' show Material;
 import '../src/device/device_manager.dart';
 import 'dart:convert';
 import '../src/rust/api/hslink_backend.dart';
@@ -20,9 +19,6 @@ class DeviceSettings extends StatefulWidget {
 class _DeviceSettingsState extends State<DeviceSettings> {
   final TextEditingController _nicknameController = TextEditingController();
   bool _isSaving = false;
-  String? _errorMessage;
-  String? _successMessage;
-  OverlayEntry? _overlayEntry;
 
   // 性能设置
   bool _speedBoostEnable = false;

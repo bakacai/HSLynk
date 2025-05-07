@@ -13,7 +13,7 @@ InstallDir "$PROGRAMFILES64\HSLynk"
 
 Section "HSLynk" SecMain
   SetOutPath "$INSTDIR"
-  File /r "build\windows\x64\runner\Release\*.*"
+  File /r "..\build\windows\x64\runner\Release\*.*"
   
   CreateDirectory "$SMPROGRAMS\HSLynk"
   CreateShortcut "$SMPROGRAMS\HSLynk\HSLynk.lnk" "$INSTDIR\hslynk.exe"
