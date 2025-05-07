@@ -62,16 +62,69 @@ jobs:
       # 创建DEB包
       - name: Create DEB package
         run: |
+          # 获取版本号
+          VERSION=${GITHUB_REF#refs/tags/v}
+          if [ -z "$VERSION" ]; then
+            VERSION="1.0.0"
+          fi
+          
           mkdir -p deb/DEBIAN
           mkdir -p deb/usr/bin
           mkdir -p deb/usr/share/applications
           mkdir -p deb/usr/share/icons/hicolor/256x256/apps
+          mkdir -p deb/lib/udev/rules.d
           cp -r build/linux/x64/release/bundle/* deb/usr/bin/
           cp assets/images/hslink.png deb/usr/share/icons/hicolor/256x256/apps/hslynk.png
           cp AppDir/usr/share/applications/hslynk.desktop deb/usr/share/applications/
+          cp linux/99-hslink.rules deb/lib/udev/rules.d/
+          
+          # 创建 postinst 脚本
+          cat > deb/DEBIAN/postinst << EOF
+          #!/bin/sh
+          set -e
+          
+          # 重新加载 udev 规则
+          udevadm control --reload-rules
+          udevadm trigger
+          
+          # 设置权限
+          chmod 644 /lib/udev/rules.d/99-hslink.rules
+          
+          # 确保用户组存在
+          if ! getent group hslynk >/dev/null; then
+            groupadd -r hslynk
+          fi
+          
+          # 添加当前用户到 hslynk 组
+          if [ -n "\$SUDO_USER" ]; then
+            usermod -a -G hslynk "\$SUDO_USER"
+          fi
+          
+          exit 0
+          EOF
+          
+          # 创建 prerm 脚本
+          cat > deb/DEBIAN/prerm << EOF
+          #!/bin/sh
+          set -e
+          
+          # 如果这是卸载操作
+          if [ "\$1" = "remove" ]; then
+            # 重新加载 udev 规则
+            udevadm control --reload-rules
+            udevadm trigger
+          fi
+          
+          exit 0
+          EOF
+          
+          # 设置脚本权限
+          chmod 755 deb/DEBIAN/postinst
+          chmod 755 deb/DEBIAN/prerm
+          
           cat > deb/DEBIAN/control << EOF
           Package: hslynk
-          Version: ${GITHUB_REF#refs/tags/v}
+          Version: $VERSION
           Architecture: amd64
           Maintainer: Bakacai
           Description: HSLynk - HS LINK PRO上位机
@@ -96,20 +149,50 @@ jobs:
           mkdir -p %{buildroot}/usr/bin
           mkdir -p %{buildroot}/usr/share/applications
           mkdir -p %{buildroot}/usr/share/icons/hicolor/256x256/apps
+          mkdir -p %{buildroot}/lib/udev/rules.d
           cp -r %{_sourcedir}/bundle/* %{buildroot}/usr/bin/
           cp %{_sourcedir}/hslynk.png %{buildroot}/usr/share/icons/hicolor/256x256/apps/
           cp %{_sourcedir}/hslynk.desktop %{buildroot}/usr/share/applications/
+          cp %{_sourcedir}/99-hslink.rules %{buildroot}/lib/udev/rules.d/
+          
+          %post
+          # 重新加载 udev 规则
+          udevadm control --reload-rules
+          udevadm trigger
+          
+          # 设置权限
+          chmod 644 /lib/udev/rules.d/99-hslink.rules
+          
+          # 确保用户组存在
+          if ! getent group hslynk >/dev/null; then
+            groupadd -r hslynk
+          fi
+          
+          # 添加当前用户到 hslynk 组
+          if [ -n "\$SUDO_USER" ]; then
+            usermod -a -G hslynk "\$SUDO_USER"
+          fi
+          
+          %preun
+          # 如果这是卸载操作
+          if [ \$1 = 0 ]; then
+            # 重新加载 udev 规则
+            udevadm control --reload-rules
+            udevadm trigger
+          fi
           
           %files
           /usr/bin/*
           /usr/share/applications/hslynk.desktop
           /usr/share/icons/hicolor/256x256/apps/hslynk.png
+          /lib/udev/rules.d/99-hslink.rules
           EOF
           
           mkdir -p rpm/SOURCES/bundle
           cp -r build/linux/x64/release/bundle/* rpm/SOURCES/bundle/
           cp assets/images/hslink.png rpm/SOURCES/hslynk.png
           cp AppDir/usr/share/applications/hslynk.desktop rpm/SOURCES/
+          cp linux/99-hslink.rules rpm/SOURCES/
           rpmbuild --define "_topdir $(pwd)/rpm" -bb rpm/SPECS/hslynk.spec
           cp rpm/RPMS/x86_64/hslynk*.rpm ./hslynk.rpm
 
