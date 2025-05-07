@@ -161,7 +161,6 @@ class DeviceManager extends ChangeNotifier {
 
       // 解析设备信息
       final rspJson = jsonDecode(rsp);
-      final serial = rspJson["serial"];
       final model = rspJson["model"];
       final version = rspJson["version"];
       final hardware = rspJson["hardware"];
