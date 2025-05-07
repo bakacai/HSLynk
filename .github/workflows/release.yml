@@ -1,8 +1,10 @@
 name: Release
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*.*.*"
+    
 
 jobs:
   # Linux 构建任务
