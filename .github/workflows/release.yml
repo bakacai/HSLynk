@@ -3,11 +3,11 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: '版本号 (例如: 1.0.0)'
+        description: '版本号'
         required: true
         type: string
       release_notes:
-        description: '发布说明 (支持 Markdown 格式)'
+        description: '发布说明'
         required: true
         type: string
         default: "## 更新内容\n\n- 功能更新\n- 问题修复\n- 其他改进"
