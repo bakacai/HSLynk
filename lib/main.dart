@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'screens/home.dart';
 import 'screens/settings.dart';
 import 'screens/about.dart';
@@ -106,6 +107,7 @@ class MyApp extends StatelessWidget {
           // 配置暗色主题
           darkTheme: FluentThemeData(
             brightness: Brightness.dark,
+            fontFamily: Platform.isWindows ? 'Microsoft YaHei' : null,
             accentColor: appTheme.color,
             visualDensity: VisualDensity.standard,
             focusTheme: FocusThemeData(
@@ -114,6 +116,7 @@ class MyApp extends StatelessWidget {
           ),
           // 配置默认主题(亮色)
           theme: FluentThemeData(
+            fontFamily: Platform.isWindows ? 'Microsoft YaHei' : null,
             accentColor: appTheme.color,
             visualDensity: VisualDensity.standard,
             focusTheme: FocusThemeData(
@@ -125,16 +128,7 @@ class MyApp extends StatelessWidget {
           builder: (context, child) {
             return Directionality(
               textDirection: appTheme.textDirection, // 设置文字方向(LTR/RTL)
-              child: NavigationPaneTheme(
-                data: NavigationPaneThemeData(
-                  // 根据窗口效果设置导航栏背景色
-                  backgroundColor: appTheme.windowEffect !=
-                          flutter_acrylic.WindowEffect.disabled
-                      ? Colors.transparent
-                      : null,
-                ),
-                child: child!,
-              ),
+              child: child!,
             );
           },
           // 配置路由相关

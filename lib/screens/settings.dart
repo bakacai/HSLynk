@@ -1,9 +1,6 @@
 // ignore_for_file: constant_identifier_names
 
-import 'package:flutter/foundation.dart';
-
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:provider/provider.dart';
 
 import '../theme.dart';
@@ -21,66 +18,6 @@ const List<String> accentColorNames = [
   '绿色',
 ];
 
-// 判断是否支持窗口特效
-bool get kIsWindowEffectsSupported {
-  return !kIsWeb &&
-      [
-        TargetPlatform.windows,
-        TargetPlatform.linux,
-        TargetPlatform.macOS,
-      ].contains(defaultTargetPlatform);
-}
-
-// Linux平台支持的窗口特效
-const _LinuxWindowEffects = [
-  WindowEffect.disabled,
-  WindowEffect.transparent,
-];
-
-// Windows平台支持的窗口特效
-const _WindowsWindowEffects = [
-  WindowEffect.disabled,
-  WindowEffect.solid,
-  WindowEffect.transparent,
-  WindowEffect.aero,
-  WindowEffect.acrylic,
-  WindowEffect.mica,
-  WindowEffect.tabbed,
-];
-
-// macOS平台支持的窗口特效
-const _MacosWindowEffects = [
-  WindowEffect.disabled,
-  WindowEffect.titlebar,
-  WindowEffect.selection,
-  WindowEffect.menu,
-  WindowEffect.popover,
-  WindowEffect.sidebar,
-  WindowEffect.headerView,
-  WindowEffect.sheet,
-  WindowEffect.windowBackground,
-  WindowEffect.hudWindow,
-  WindowEffect.fullScreenUI,
-  WindowEffect.toolTip,
-  WindowEffect.contentBackground,
-  WindowEffect.underWindowBackground,
-  WindowEffect.underPageBackground,
-];
-
-// 获取当前平台支持的窗口特效列表
-List<WindowEffect> get currentWindowEffects {
-  if (kIsWeb) return [];
-
-  if (defaultTargetPlatform == TargetPlatform.windows) {
-    return _WindowsWindowEffects;
-  } else if (defaultTargetPlatform == TargetPlatform.linux) {
-    return _LinuxWindowEffects;
-  } else if (defaultTargetPlatform == TargetPlatform.macOS) {
-    return _MacosWindowEffects;
-  }
-
-  return [];
-}
 
 // 设置页面组件
 class Settings extends StatefulWidget {
@@ -144,50 +81,6 @@ class _SettingsState extends State<Settings> with PageMixin {
             );
           }),
         ]),
-        if (kIsWindowEffectsSupported) ...[
-          biggerSpacer,
-          Text(
-            '窗口透明度',
-            style: FluentTheme.of(context).typography.subtitle,
-          ),
-          description(
-            content: Text(
-              '运行平台: ${defaultTargetPlatform.toString().replaceAll('TargetPlatform.', '')}',
-            ),
-          ),
-          spacer,
-          ...List.generate(currentWindowEffects.length, (index) {
-            final mode = currentWindowEffects[index];
-            return Padding(
-              padding: const EdgeInsetsDirectional.only(bottom: 8.0),
-              child: RadioButton(
-                checked: appTheme.windowEffect == mode,
-                onChanged: (value) async {
-                  if (value) {
-                    await Window.setEffect(
-                      effect: mode,
-                      color: [
-                        WindowEffect.solid,
-                        WindowEffect.acrylic,
-                      ].contains(mode)
-                          ? FluentTheme.of(context)
-                              .micaBackgroundColor
-                              .withValues(alpha: 0.05)
-                          : Colors.transparent,
-                      dark: FluentTheme.of(context).brightness.isDark,
-                    );
-                    if (mounted) {
-                      appTheme.windowEffect = mode;
-                    }
-                  }
-                },
-                content: Text(
-                  mode.toString().replaceAll('WindowEffect.', ''),
-                ),
-              ),
-            );
-          }),
-        ],
       ],
     );
   }
