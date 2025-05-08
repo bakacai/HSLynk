@@ -8,7 +8,6 @@ enum NavigationIndicators { sticky, end }
 
 class AppTheme extends ChangeNotifier {
   static const String _themeModeKey = 'theme_mode';
-  static const String _windowEffectKey = 'window_effect';
   static const String _accentColorKey = 'accent_color';
 
   AccentColor? _color;
@@ -41,18 +40,6 @@ class AppTheme extends ChangeNotifier {
     notifyListeners();
   }
 
-  WindowEffect _windowEffect = WindowEffect.disabled;
-  WindowEffect get windowEffect => _windowEffect;
-  set windowEffect(WindowEffect effect) {
-    _windowEffect = effect;
-    _saveSettings();
-    notifyListeners();
-  }
-
-  void setEffect(WindowEffect effect, BuildContext context) {
-    windowEffect = effect;
-  }
-
   TextDirection _textDirection = TextDirection.ltr;
   TextDirection get textDirection => _textDirection;
   set textDirection(TextDirection direction) {
@@ -74,11 +61,9 @@ class AppTheme extends ChangeNotifier {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final themeModeIndex = prefs.getInt(_themeModeKey) ?? 0;
-    final windowEffectIndex = prefs.getInt(_windowEffectKey) ?? 0;
     final accentColorIndex = prefs.getInt(_accentColorKey);
 
     _mode = ThemeMode.values[themeModeIndex];
-    _windowEffect = WindowEffect.values[windowEffectIndex];
 
     if (accentColorIndex != null) {
       if (accentColorIndex == 0) {
@@ -94,7 +79,6 @@ class AppTheme extends ChangeNotifier {
   Future<void> _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_themeModeKey, _mode.index);
-    await prefs.setInt(_windowEffectKey, _windowEffect.index);
 
     // 保存强调色索引
     if (_color == null) {

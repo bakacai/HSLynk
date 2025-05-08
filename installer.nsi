@@ -16,13 +16,6 @@ InstallDir "$PROGRAMFILES64\HSLynk"
 Section "HSLynk" SecMain
   SetOutPath "$INSTDIR"
   
-  # 验证源目录
-  IfFileExists "${SOURCE_DIR}\*.*" 0 +3
-    File /r "${SOURCE_DIR}\*.*"
-    Goto +2
-  MessageBox MB_OK|MB_ICONEXCLAMATION "源文件目录不存在：${SOURCE_DIR}"
-  Abort
-  
   # 创建开始菜单快捷方式
   CreateDirectory "$SMPROGRAMS\HSLynk"
   CreateShortcut "$SMPROGRAMS\HSLynk\HSLynk.lnk" "$INSTDIR\hslynk.exe"
