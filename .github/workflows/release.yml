@@ -240,7 +240,7 @@ jobs:
       # 创建便携版ZIP
       - name: Create Portable ZIP
         run: |
-          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath HSLynk-portable.zip
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath HSLynk-windows-portable.zip
 
       # 创建Windows安装包
       - name: Create Windows Installer
@@ -254,7 +254,7 @@ jobs:
         with:
           name: windows-artifacts
           path: |
-            HSLynk-portable.zip
+            HSLynk-windows-portable.zip
             HSLynk-setup.exe
 
   # 创建GitHub Release
@@ -271,7 +271,7 @@ jobs:
           files: |
             linux-artifacts/hslynk.deb
             linux-artifacts/hslynk.rpm
-            windows-artifacts/HSLynk-portable.zip
+            windows-artifacts/HSLynk-windows-portable.zip
             windows-artifacts/HSLynk-setup.exe
           draft: false
           prerelease: false

@@ -96,7 +96,7 @@ class AboutPage extends StatelessWidget {
                       SizedBox(height: 5),
                       Text('Bakacai'),
                       Text(
-                        '项目发起人',
+                        '三方上位机',
                         style: TextStyle(
                           fontSize: 12,
                         ),
